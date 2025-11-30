@@ -1,0 +1,533 @@
+<!-- index.html — Teil 1/3 -->
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dinge gegen Langeweile — Deluxe</title>
+
+  <!-- GSAP für Animationen -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+
+  <style>
+    /* ---------------- Reset & CSS-Variablen ---------------- */
+    :root{
+      --bgA: #0f1724;
+      --bgB: #07101a;
+      --accent: #7C5CFF;
+      --accent2: #4fd1c5;
+      --text: #e6eef8;
+      --muted: rgba(230,238,248,0.7);
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html,body{height:100%;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale}
+    body{
+      background: linear-gradient(180deg,var(--bgA), var(--bgB));
+      color:var(--text);
+      overflow-x:hidden;
+    }
+
+    /* Canvas background */
+    #canvas-bg{position:fixed;inset:0;z-index:0;pointer-events:none;filter:blur(6px) saturate(1.05);opacity:0.95}
+
+    /* App layout */
+    .app{position:relative;z-index:5;max-width:1160px;margin:0 auto;padding:20px;}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+    .left-controls{display:flex;align-items:center;gap:12px}
+    .menu-btn, .settings-btn{background:transparent;border:0;color:inherit;cursor:pointer;padding:8px;border-radius:10px}
+    .logo{display:flex;gap:10px;align-items:center;font-weight:800;letter-spacing:0.3px}
+    .logo-badge{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#A78BFA,#60A5FA);display:grid;place-items:center;font-weight:900;color:#08111B}
+    .greeting{font-size:14px;color:rgba(230,238,248,0.92);font-weight:700}
+
+    /* Left nav */
+    nav.left-panel{position:fixed;left:18px;top:74px;z-index:9;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;backdrop-filter:blur(6px);box-shadow:0 12px 40px rgba(2,6,23,0.5)}
+    nav.left-panel a{display:block;padding:10px 12px;border-radius:10px;text-decoration:none;color:inherit;font-weight:700;margin-bottom:6px}
+    nav.left-panel a.active{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#07111a}
+
+    /* Settings drawer */
+    .settings-drawer{position:fixed;right:18px;top:64px;width:360px;max-width:92vw;z-index:12;background:linear-gradient(180deg, rgba(3,6,23,0.65), rgba(3,6,23,0.55));border-radius:14px;padding:14px;backdrop-filter:blur(8px);box-shadow:0 18px 50px rgba(2,6,23,0.7);transform-origin:top right}
+    .settings-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px}
+    .settings-section{background:rgba(255,255,255,0.02);border-radius:10px;padding:10px;margin-bottom:10px;overflow:hidden}
+    .section-title{display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:6px;border-radius:8px}
+    .section-body{padding:8px 6px 12px 6px;display:none}
+
+    /* Inputs */
+    input[type="text"], select, textarea{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.06);background:transparent;color:inherit;font-weight:600;margin-top:8px}
+    .row{display:flex;gap:8px;align-items:center}
+    .small{font-size:13px;color:rgba(230,238,248,0.75)}
+
+    /* Cards and grid */
+    .hero{display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;padding-top:12px}
+    .left-card{flex:1 1 540px;min-width:300px}
+    .right-column{width:380px;min-width:260px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));border-radius:14px;padding:18px;margin-bottom:14px;backdrop-filter:blur(6px);box-shadow:0 8px 30px rgba(3,6,23,0.55)}
+    .big-btn{display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;border:none;cursor:pointer;font-weight:800;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#031124;box-shadow:0 10px 30px rgba(124,92,255,0.14)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:12px}
+    .idea{background:rgba(255,255,255,0.02);padding:12px;border-radius:12px;cursor:pointer;transition:transform .28s}
+    .idea:hover{transform:translateY(-8px)}
+    .muted{color:rgba(230,238,248,0.65);font-size:13px}
+    footer{padding:20px 0;color:rgba(230,238,248,0.65);text-align:center;font-size:13px}
+
+    /* Fancy switch */
+    .switch{width:56px;height:30px;border-radius:999px;background:linear-gradient(90deg,#222,#333);position:relative;padding:5px;cursor:pointer}
+    .switch .knob{width:20px;height:20px;border-radius:50%;background:linear-gradient(180deg,#fff,#ddd);position:absolute;top:5px;left:5px;box-shadow:0 6px 18px rgba(0,0,0,0.4)}
+    .switch.on{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+    .switch.on .knob{left:31px;background:linear-gradient(180deg,#07111a,#0b1b27);box-shadow:0 10px 30px rgba(79,209,197,0.15)}
+
+    .chip{display:inline-flex;gap:8px;align-items:center;padding:8px 10px;border-radius:999px;background:rgba(0,0,0,0.18);margin-right:8px;margin-bottom:8px}
+    .chip button{background:transparent;border:0;color:inherit;cursor:pointer;font-weight:800}
+
+    @media(max-width:900px){ .right-column{width:100%} nav.left-panel{display:none} }
+  </style>
+</head>
+<body>
+
+  <!-- Canvas Partikel -->
+  <canvas id="canvas-bg"></canvas>
+
+  <div class="app">
+    <header>
+      <div class="left-controls">
+        <button class="menu-btn" id="btn-open-menu" title="Öffne Seitenmenü">☰</button>
+        <div class="logo">
+          <div class="logo-badge">DG</div>
+          <div>
+            <div style="font-size:15px">Dinge gegen</div>
+            <div class="greeting" id="greet">Langeweile — Projekt</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center">
+        <div style="font-weight:700;color:rgba(230,238,248,0.8)" id="page-title">Generator</div>
+        <div class="settings-toggle">
+          <button class="settings-btn" id="settings-btn" title="Einstellungen">⚙️</button>
+        </div>
+      </div>
+    </header>
+
+    <nav class="left-panel" id="leftPanel" style="display:none">
+      <a href="#" data-page="generator" class="active">🎲 Generator</a>
+      <a href="#" data-page="popular">👥 Was andere machen</a>
+      <a href="#" data-page="about">ℹ️ Über</a>
+    </nav><!-- index.html — Teil 2/3 -->
+    <main>
+      <section class="hero">
+        <!-- Left: Generator -->
+        <div class="left-card">
+          <div class="card" id="genCard">
+            <h2 id="hero-title">Sofort Ideen gegen Langeweile ✨</h2>
+            <p class="muted" id="sub-title">Klicke auf "Los!" oder wähle Persönlichkeit für angepasste Vorschläge.</p>
+
+            <div style="display:flex;gap:12px;align-items:center;margin-top:12px">
+              <button class="big-btn" id="btn-gen">Los! 🎲</button>
+              <div style="flex:1">
+                <div id="gen-result" style="font-weight:800;font-size:18px;min-height:34px;margin-left:6px"></div>
+              </div>
+            </div>
+
+            <div style="margin-top:14px" id="idea-grid-wrap">
+              <div style="font-weight:800;margin-bottom:8px">Vorschläge</div>
+              <div class="grid" id="ideas-grid"></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <div style="font-weight:800;margin-bottom:8px">Mehr Mini-Games (Demo)</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="big-btn" id="open-tictactoe" style="padding:8px 12px;font-size:14px">Tic-Tac-Toe</button>
+              <button class="big-btn" id="open-memory" style="padding:8px 12px;font-size:14px">Memory</button>
+              <button class="big-btn" id="open-quickdraw" style="padding:8px 12px;font-size:14px">Quick-Draw</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column -->
+        <aside class="right-column">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="font-weight:800">Top Picks</div>
+              <div class="muted">angepasst an Persönlichkeit</div>
+            </div>
+            <div class="grid" id="top-picks" style="margin-top:10px"></div>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <div style="font-weight:800;margin-bottom:8px">Beliebte Aktivitäten</div>
+            <ul style="line-height:1.6;color:rgba(230,238,248,0.85);margin:0;padding-left:18px">
+              <li>Zeichnen & Doodle-Challenges</li>
+              <li>Kurz-Workouts (10 Min)</li>
+              <li>Fototour durch die Wohnung</li>
+              <li>3-Minuten Podcast Gedanken</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <section id="page-popular" style="display:none;margin-top:14px">
+        <div class="card">
+          <h3>Was Andere machen — Beispiele</h3>
+          <p class="muted">Eine kleine Sammlung von Aktivitäten, die oft gewählt werden.</p>
+          <div class="grid" id="popular-list" style="margin-top:12px"></div>
+        </div>
+      </section>
+
+      <section id="page-about" style="display:none;margin-top:14px">
+        <div class="card">
+          <h3>Über das Projekt</h3>
+          <p class="muted">Dieses Projekt ist für ein Schulprojekt — gebaut mit HTML/CSS/JS und krassen Animationen.</p>
+        </div>
+      </section>
+
+      <footer>
+        © <span id="year"></span> Dinge gegen Langeweile — Erstellt von dir. Viel Erfolg, Bro! 🚀
+      </footer>
+    </main>
+  </div>
+
+  <!-- SETTINGS DRAWER -->
+  <div id="settingsDrawer" class="settings-drawer" style="display:none">
+    <div class="settings-header">
+      <div style="font-weight:800">Einstellungen</div>
+      <div class="small">Speichert lokal ✅</div>
+    </div>
+
+    <!-- THEME -->
+    <div class="settings-section">
+      <div class="section-title" data-accordion="theme">
+        <div><strong>Design</strong><div class="small">Dark / Light Mode</div></div>
+        <div class="toggle">
+          <div class="switch" id="themeSwitch" title="Theme wechseln"><div class="knob"></div></div>
+        </div>
+      </div>
+      <div class="section-body" id="theme-body">
+        <p class="small">Krasse Animation beim Wechsel — einfach den Schalter klicken.</p>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="big-btn" id="theme-fx1">Ultra Morph FX</button>
+          <button class="big-btn" id="theme-fx2">Soft Fade</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NAME -->
+    <div class="settings-section">
+      <div class="section-title" data-accordion="name">
+        <div><strong>Name & Begrüßung</strong><div class="small">Wird lokal gespeichert</div></div>
+        <div class="toggle">▾</div>
+      </div>
+      <div class="section-body" id="name-body">
+        <label class="small">Dein Name</label>
+        <input type="text" id="name-input" placeholder="z. B. Max" />
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button class="big-btn" id="save-name">Speichern</button>
+          <button class="big-btn" id="clear-name" style="background:transparent;color:var(--accent);box-shadow:none;border:1px solid rgba(255,255,255,0.04)">Zurücksetzen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERSONALITY -->
+    <div class="settings-section">
+      <div class="section-title" data-accordion="personality">
+        <div><strong>Persönlichkeit</strong><div class="small">Verändert Vorschläge</div></div>
+        <div class="toggle">▾</div>
+      </div>
+      <div class="section-body" id="personality-body">
+        <label class="small">Preset auswählen</label>
+        <select id="person-select" style="margin-top:8px"></select>
+
+        <div style="margin-top:10px">
+          <label class="small">Eigene Persönlichkeit hinzufügen (Name + Tags, kommagetrennt)</label>
+          <input type="text" id="custom-person-name" placeholder="z. B. Sportlicher Sam" />
+          <input type="text" id="custom-person-tags" placeholder="Tags: Sport, Aktiv, Kurz" style="margin-top:8px" />
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="big-btn" id="add-custom-person">Hinzufügen</button>
+            <button class="big-btn" id="del-custom-person" style="background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--accent)">Löschen</button>
+          </div>
+        </div>
+
+        <div style="margin-top:10px">
+          <div style="font-weight:700;margin-bottom:6px">Deine Persönlichkeiten</div>
+          <div id="custom-list" style="display:flex;flex-wrap:wrap"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- index.html — Teil 3/3 -->
+  <script>
+  /* --------------------------
+     JS: Particles + UI + Settings
+     --------------------------- */
+
+  // ---- Canvas background ----
+  const canvas = document.getElementById('canvas-bg');
+  const ctx = canvas.getContext('2d');
+  let DPR = Math.max(1, window.devicePixelRatio || 1);
+  function resizeCanvas(){ DPR = Math.max(1, window.devicePixelRatio || 1); canvas.width = innerWidth * DPR; canvas.height = innerHeight * DPR; canvas.style.width = innerWidth + 'px'; canvas.style.height = innerHeight + 'px'; ctx.setTransform(DPR,0,0,DPR,0,0); }
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  const particles = []; const PCOUNT = Math.max(28, Math.floor((innerWidth * innerHeight) / 28000));
+  for(let i=0;i<PCOUNT;i++){ particles.push({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:(Math.random()*2.4)+0.6, vx:(Math.random()-0.5)*0.3, vy:(Math.random()-0.5)*0.3, hue:200+Math.random()*140 }) }
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const g = ctx.createLinearGradient(0,0, innerWidth, innerHeight);
+    g.addColorStop(0, 'rgba(124,92,255,0.04)'); g.addColorStop(1, 'rgba(79,209,197,0.03)');
+    ctx.fillStyle = g; ctx.fillRect(0,0,innerWidth,innerHeight);
+    for(const p of particles){
+      p.x += p.vx; p.y += p.vy;
+      if(p.x < -10) p.x = innerWidth + 10; if(p.x > innerWidth +10) p.x = -10;
+      if(p.y < -10) p.y = innerHeight + 10; if(p.y > innerHeight +10) p.y = -10;
+      ctx.beginPath();
+      const g2 = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 8);
+      g2.addColorStop(0, `hsla(${p.hue}, 90%, 70%, 0.16)`); g2.addColorStop(1, `hsla(${p.hue}, 80%, 50%, 0)`);
+      ctx.fillStyle = g2; ctx.arc(p.x, p.y, p.r * 6, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.beginPath(); for(let i=0;i<particles.length;i++){ for(let j=i+1;j<i+3 && j<particles.length;j++){ const a=particles[i], b=particles[j]; const dx=a.x-b.x, dy=a.y-b.y, d=Math.sqrt(dx*dx+dy*dy); if(d<140){ ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); } } }
+    ctx.strokeStyle='rgba(124,92,255,0.03)'; ctx.lineWidth=1; ctx.stroke();
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+
+  // ---- Data ----
+  const ideas = [
+    {title:'Mini-Zeichen-Challenge', tag:'Kreativ', text:'Zeichne etwas in 5 Minuten mit geschlossenen Augen.'},
+    {title:'1-Ingredient-Recipe', tag:'Kochen', text:'Mach einen Snack mit nur 3 Zutaten.'},
+    {title:'Origami-Quickie', tag:'Basteln', text:'Falte ein Origami-Tier aus Notizzettel.'},
+    {title:'Kurz-Workout', tag:'Sport', text:'10 Minuten HIIT: 30s on / 15s rest.'},
+    {title:'Foto-Safari', tag:'Foto', text:'Such interessante Texturen in deiner Wohnung und fotografiere.'},
+    {title:'Story-Prompt', tag:'Schreiben', text:'Schreibe eine 100-Wort-Mini-Geschichte.'},
+    {title:'Fake-Interview', tag:'Spiel', text:'Stell dir berühmte Personen vor und führe ein Interview.'},
+    {title:'Sprachen-Blitz', tag:'Lernen', text:'Lerne 10 neue Wörter in einer Sprache.'},
+    {title:'Musik-Mix', tag:'Musik', text:'Erstelle eine 6-Song Playlist für gute Laune.'},
+    {title:'Podcast-Mikro', tag:'Tech', text:'Nimm eine 3-minütige Gedanken-Notiz auf.'}
+  ];
+
+  // ---- Elements ----
+  const btnGen = document.getElementById('btn-gen');
+  const genResult = document.getElementById('gen-result');
+  const ideasGrid = document.getElementById('ideas-grid');
+  const topPicks = document.getElementById('top-picks');
+  const year = document.getElementById('year'); year.textContent = new Date().getFullYear();
+  const greetEl = document.getElementById('greet');
+  const pageTitle = document.getElementById('page-title');
+  const leftPanel = document.getElementById('leftPanel');
+
+  // Settings Elements
+  const settingsBtn = document.getElementById('settings-btn');
+  const settingsDrawer = document.getElementById('settingsDrawer');
+  const themeSwitch = document.getElementById('themeSwitch');
+  const nameInput = document.getElementById('name-input');
+  const saveNameBtn = document.getElementById('save-name');
+  const clearNameBtn = document.getElementById('clear-name');
+  const personSelect = document.getElementById('person-select');
+  const customName = document.getElementById('custom-person-name');
+  const customTags = document.getElementById('custom-person-tags');
+  const addCustomBtn = document.getElementById('add-custom-person');
+  const delCustomBtn = document.getElementById('del-custom-person');
+  const customList = document.getElementById('custom-list');
+
+  // ---- Navigation handlers ----
+  document.querySelectorAll('nav.left-panel a').forEach(a=>{
+    a.addEventListener('click',(e)=>{
+      e.preventDefault();
+      document.querySelectorAll('nav.left-panel a').forEach(x=>x.classList.remove('active'));
+      a.classList.add('active');
+      const p = a.dataset.page;
+      openPage(p);
+    });
+  });
+  document.getElementById('btn-open-menu').addEventListener('click', ()=>{
+    leftPanel.style.display = leftPanel.style.display === 'none' ? 'block' : 'none';
+    if(leftPanel.style.display === 'block'){ gsap.from(leftPanel, {x:-20, opacity:0, duration:0.45, ease:'power3.out'}); } else { gsap.to(leftPanel, {x:-12, opacity:0.6, duration:0.35}); }
+  });
+
+  function openPage(p){
+    document.getElementById('page-popular').style.display = p==='popular' ? 'block' : 'none';
+    document.getElementById('page-about').style.display = p==='about' ? 'block' : 'none';
+    document.querySelector('.hero').style.display = p==='generator' ? 'flex' : 'none';
+    pageTitle.textContent = p==='generator' ? 'Generator' : (p==='popular' ? 'Was andere machen' : 'Über');
+  }
+
+  // Accordion behavior
+  document.querySelectorAll('.section-title').forEach(title=>{
+    title.addEventListener('click', ()=>{
+      const body = title.nextElementSibling;
+      const isOpen = body.style.display === 'block';
+      if(isOpen){ gsap.to(body, {height:0, opacity:0, duration:0.25, onComplete:()=>body.style.display='none'}); }
+      else{ body.style.display='block'; gsap.fromTo(body, {height:0, opacity:0}, {height:'auto', opacity:1, duration:0.32, ease:'power3.out'}); }
+    });
+  });
+
+  // ---- Theme logic & mega animation ----
+  const themeState = { mode: localStorage.getItem('dg_theme') || 'dark' };
+  function applyThemeInstant(mode){
+    if(mode === 'dark'){
+      document.documentElement.style.setProperty('--bgA', '#0f1724');
+      document.documentElement.style.setProperty('--bgB', '#07101a');
+      document.documentElement.style.setProperty('--accent', '#7C5CFF');
+      document.documentElement.style.setProperty('--accent2', '#4fd1c5');
+      document.documentElement.style.setProperty('--text', '#e6eef8');
+    } else {
+      document.documentElement.style.setProperty('--bgA', '#f6f8fb');
+      document.documentElement.style.setProperty('--bgB', '#eef3fb');
+      document.documentElement.style.setProperty('--accent', '#5b21b6');
+      document.documentElement.style.setProperty('--accent2', '#0ea5a5');
+      document.documentElement.style.setProperty('--text', '#072033');
+    }
+  }
+  function animateThemeSwitch(to){
+    const tl = gsap.timeline();
+    // crazy morph: overlay circle grows, background vars tween, then fade
+    const cx = window.innerWidth*0.75, cy = 80;
+    const overlay = document.createElement('div');
+    overlay.style.position='fixed'; overlay.style.left='0'; overlay.style.top='0'; overlay.style.width='100vw'; overlay.style.height='100vh';
+    overlay.style.pointerEvents='none'; overlay.style.zIndex=9999;
+    document.body.appendChild(overlay);
+
+    tl.to(overlay, {duration:0.001, onComplete:()=>{
+      // create radial div
+      overlay.innerHTML = `<svg width="${window.innerWidth}" height="${window.innerHeight}" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="g1"><stop offset="0%" stop-color="${to==='dark' ? '#07101a' : '#7C5CFF'}" stop-opacity="0.85"/><stop offset="70%" stop-color="${to==='dark' ? '#0f1724' : '#4fd1c5'}" stop-opacity="0.6"/></radialGradient></defs><rect width="100%" height="100%" fill="url(#g1)"/></svg>`;
+    }});
+    tl.to(overlay, {duration:0.18, opacity:1, ease:'power2.out'});
+    tl.to(document.documentElement, {duration:0.9, cssVars: to==='dark' ? {'--bgA':'#0f1724','--bgB':'#07101a','--accent':'#7C5CFF','--accent2':'#4fd1c5','--text':'#e6eef8'} : {'--bgA':'#f6f8fb','--bgB':'#eef3fb','--accent':'#5b21b6','--accent2':'#0ea5a5','--text':'#072033'}, ease:'power2.inOut'}, "<");
+    tl.to(overlay, {duration:0.6, opacity:0, ease:'power2.inOut', onComplete:()=>{ overlay.remove(); }});
+  }
+  applyThemeInstant(themeState.mode);
+  if(themeState.mode==='dark') themeSwitch.classList.add('on');
+
+  // Theme switch click
+  themeSwitch.addEventListener('click', ()=>{
+    themeState.mode = themeState.mode === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('dg_theme', themeState.mode);
+    if(themeState.mode === 'dark') themeSwitch.classList.add('on'); else themeSwitch.classList.remove('on');
+    animateThemeSwitch(themeState.mode);
+  });
+
+  document.getElementById('theme-fx1').addEventListener('click', ()=>{ themeSwitch.click(); });
+  document.getElementById('theme-fx2').addEventListener('click', ()=>{ /* simple */ themeSwitch.click(); });
+
+  // ---- Settings drawer toggle ----
+  settingsBtn.addEventListener('click', ()=>{
+    if(settingsDrawer.style.display === 'block'){ gsap.to(settingsDrawer, {scale:0.96, opacity:0, duration:0.22, onComplete:()=>settingsDrawer.style.display='none'}); }
+    else { settingsDrawer.style.display='block'; gsap.fromTo(settingsDrawer, {scale:0.96, opacity:0, y:-6}, {scale:1, opacity:1, y:0, duration:0.36, ease:'back.out(1.1)'}); }
+  });
+
+  // ---- Name storage & greeting ----
+  function setGreeting(name){ if(name && name.trim().length){ greetEl.textContent = `Hey ${name.trim()} 👋`; } else { greetEl.textContent = 'Dinge gegen Langeweile — Projekt'; } }
+  const storedName = localStorage.getItem('dg_name') || '';
+  if(storedName){ nameInput.value = storedName; setGreeting(storedName); }
+  saveNameBtn.addEventListener('click', ()=>{ const v = nameInput.value || ''; if(v.trim().length){ localStorage.setItem('dg_name', v.trim()); setGreeting(v); gsap.fromTo(greetEl, {y:-6, opacity:0}, {y:0, opacity:1, duration:0.5, ease:'elastic.out(1,0.6)'}); } });
+  clearNameBtn.addEventListener('click', ()=>{ localStorage.removeItem('dg_name'); nameInput.value=''; setGreeting(''); gsap.fromTo(greetEl, {scale:1.08, opacity:0.6}, {scale:1, opacity:1, duration:0.32}); });
+
+  // ---- Personalities ----
+  const defaultPresets = [
+    {key:'creative', name:'Kreativ', tags:['Kreativ','Basteln','Schreiben']},
+    {key:'active', name:'Aktiv', tags:['Sport','Aktiv','Kurz']},
+    {key:'chill', name:'Chillig', tags:['Musik','Foto','Relax']},
+    {key:'nerdy', name:'Neugierig', tags:['Lernen','Tech','Schreiben']}
+  ];
+  let customPersons = JSON.parse(localStorage.getItem('dg_custom_persons') || '[]');
+
+  function refreshPersonSelect(){
+    personSelect.innerHTML=''; const opt1=document.createElement('optgroup'); opt1.label='Presets';
+    defaultPresets.forEach(p=>{ const o=document.createElement('option'); o.value='preset:'+p.key; o.textContent=p.name; opt1.appendChild(o); });
+    personSelect.appendChild(opt1);
+    if(customPersons.length){ const opt2=document.createElement('optgroup'); opt2.label='Eigene'; customPersons.forEach((p,idx)=>{ const o=document.createElement('option'); o.value='custom:'+idx; o.textContent=p.name; opt2.appendChild(o); }); personSelect.appendChild(opt2); }
+  }
+
+  function renderCustomList(){
+    customList.innerHTML='';
+    customPersons.forEach((p,idx)=>{ const chip=document.createElement('div'); chip.className='chip'; chip.innerHTML=`<div style="font-weight:800">${p.name}</div><div style="opacity:.85">${p.tags.join(', ')}</div><button data-idx="${idx}">✕</button>`; chip.querySelector('button').addEventListener('click', ()=>{ customPersons.splice(idx,1); localStorage.setItem('dg_custom_persons', JSON.stringify(customPersons)); renderCustomList(); refreshPersonSelect(); }); customList.appendChild(chip); });
+  }
+
+  addCustomBtn.addEventListener('click', ()=>{ const n=(customName.value||'').trim(); const t=(customTags.value||'').trim(); if(!n) return alert('Bitte Namen angeben'); const tags = t ? t.split(',').map(s=>s.trim()).filter(Boolean) : ['Alltag']; customPersons.push({name:n,tags:tags}); localStorage.setItem('dg_custom_persons', JSON.stringify(customPersons)); customName.value=''; customTags.value=''; renderCustomList(); refreshPersonSelect(); gsap.fromTo('#custom-list',{y:6,opacity:0},{y:0,opacity:1,duration:0.45,ease:'power3.out'}); });
+  delCustomBtn.addEventListener('click', ()=>{ if(!customPersons.length) return alert('Keine eigenen Persönlichkeiten vorhanden'); customPersons.pop(); localStorage.setItem('dg_custom_persons', JSON.stringify(customPersons)); renderCustomList(); refreshPersonSelect(); });
+
+  refreshPersonSelect(); renderCustomList();
+
+  // ---- Idea scoring based on personality ----
+  function scoreIdeaForPerson(idea, person){
+    let score=0; const t=idea.tag.toLowerCase();
+    person.tags.forEach(pt=>{ if(t.includes(pt.toLowerCase())) score+=2; if(idea.title.toLowerCase().includes(pt.toLowerCase())) score+=1; });
+    return score;
+  }
+  function getSelectedPerson(){
+    const val = personSelect.value;
+    if(!val) return defaultPresets[0];
+    if(val.startsWith('preset:')){ const key=val.split(':')[1]; return defaultPresets.find(p=>p.key===key)||defaultPresets[0]; }
+    const idx=parseInt(val.split(':')[1],10); return customPersons[idx]||defaultPresets[0];
+  }
+
+  function renderIdeasGrid(){
+    const person = getSelectedPerson();
+    const scored = ideas.map(i=>({i,s:scoreIdeaForPerson(i,person)}));
+    scored.sort((a,b)=>b.s-a.s);
+    ideasGrid.innerHTML=''; scored.forEach(s=>{ const it=s.i; const el=document.createElement('div'); el.className='idea'; el.innerHTML=`<div style="font-weight:800">${it.title}</div><div class="muted" style="margin-top:6px">${it.tag}</div><div style="margin-top:8px">${it.text}</div>`; el.addEventListener('click', ()=>{ showGenerated(`${it.title} — ${it.text}`); gsap.fromTo(el,{y:0},{y:-6,duration:0.18,yoyo:true,repeat:1}); }); ideasGrid.appendChild(el); });
+    topPicks.innerHTML=''; scored.slice(0,4).forEach(s=>{ const it=s.i; const el=document.createElement('div'); el.className='idea'; el.style.minHeight='80px'; el.innerHTML=`<div style="font-weight:800">${it.title}</div><div class="muted">${it.tag}</div>`; topPicks.appendChild(el); });
+  }
+
+  personSelect.addEventListener('change', ()=>{ renderIdeasGrid(); gsap.fromTo('#ideas-grid',{opacity:0,y:8},{opacity:1,y:0,duration:0.45}); });
+
+  renderIdeasGrid();
+
+  // ---- Generator button logic (weighted) ----
+  function showGenerated(txt){ genResult.innerHTML = txt; gsap.fromTo(genResult, {y:10, opacity:0}, {y:0, opacity:1, duration:0.46, ease:'power3.out'}); }
+  btnGen.addEventListener('click', ()=>{
+    const person = getSelectedPerson();
+    const scored = ideas.map(i=>({i,s:Math.max(1, scoreIdeaForPerson(i, person) + 1)}));
+    let total = scored.reduce((a,b)=>a+b.s,0);
+    let r = Math.random()*total;
+    for(const item of scored){ if(r < item.s){ showGenerated(`${item.i.title} — ${item.i.text}`); break; } r -= item.s; }
+    gsap.fromTo(btnGen, {scale:1},{scale:0.96,duration:0.06,yoyo:true,repeat:1});
+  });
+
+  // ---- Popular list demo ----
+  const popularList = document.getElementById('popular-list');
+  const samplePopular = [
+    {title:'Kreative 5-Min-Challenge', by:'Anna', text:'Zeichnete 5 Dinge mit der nicht-dominanten Hand.'},
+    {title:'Fenster-Foto-Safari', by:'Ben', text:'Finde 10 Farben in 10 Minuten.'},
+    {title:'Playlist-Chaos', by:'Lena', text:'Erstelle Playlist nur mit Songs, die bisher nie gespielt wurden.'}
+  ];
+  function renderPopular(){ popularList.innerHTML=''; samplePopular.forEach(p=>{ const el=document.createElement('div'); el.className='idea'; el.innerHTML=`<div style="font-weight:800">${p.title}</div><div class="muted">${p.by}</div><div style="margin-top:8px">${p.text}</div>`; popularList.appendChild(el); }); }
+  renderPopular();
+
+  // ---- UI niceties ----
+  if(window.innerWidth > 900) leftPanel.style.display = 'block';
+
+  document.addEventListener('click', (e)=>{
+    const path = e.composedPath ? e.composedPath() : (e.path || []);
+    if(settingsDrawer.style.display === 'block' && !path.includes(settingsDrawer) && !path.includes(settingsBtn)){
+      gsap.to(settingsDrawer, {scale:0.96, opacity:0, duration:0.22, onComplete:()=>settingsDrawer.style.display='none'});
+    }
+  });
+
+  window.addEventListener('load', ()=>{
+    gsap.from('.card', {y:18, opacity:0, duration:0.9, stagger:0.06, delay:0.12});
+    gsap.from('#hero-title', {y:20, opacity:0, duration:0.9, ease:'power3.out'});
+    const storedPersonIdx = localStorage.getItem('dg_selected_person');
+    if(storedPersonIdx){ personSelect.value = storedPersonIdx; } else { personSelect.selectedIndex = 0; }
+    renderIdeasGrid();
+  });
+
+  personSelect.addEventListener('change', ()=>{ localStorage.setItem('dg_selected_person', personSelect.value || 'preset:creative'); });
+  localStorage.setItem('dg_custom_persons', JSON.stringify(customPersons));
+
+  // open first accordion by default
+  document.querySelectorAll('.settings-section .section-body').forEach((b,i)=>{ if(i===0){ b.style.display='block'; gsap.fromTo(b,{height:0,opacity:0},{height:'auto',opacity:1,duration:0.36}); } });
+
+  document.getElementById('idea-grid-wrap').addEventListener('click', ()=>{ gsap.fromTo('.idea',{y:6,opacity:0.6},{y:0,opacity:1,duration:0.5,stagger:0.04,ease:'power3.out'}); });
+
+  document.addEventListener('keydown', (e)=>{ if(e.key.toLowerCase() === 's'){ settingsBtn.click(); } if(e.key === 'Escape'){ if(settingsDrawer.style.display==='block'){ gsap.to(settingsDrawer, {scale:0.96, opacity:0, duration:0.22, onComplete:()=>settingsDrawer.style.display='none'}); } } });
+
+  window.addEventListener('beforeunload', ()=>{ localStorage.setItem('dg_theme', themeState.mode); localStorage.setItem('dg_selected_person', personSelect.value || 'preset:creative'); });
+
+  // demo game buttons (placeholders)
+  document.getElementById('open-tictactoe').addEventListener('click', ()=>alert('Tic-Tac-Toe Demo - später ausbauen 😎'));
+  document.getElementById('open-memory').addEventListener('click', ()=>alert('Memory Demo - später ausbauen 😎'));
+  document.getElementById('open-quickdraw').addEventListener('click', ()=>alert('Quick-Draw Demo - später ausbauen 😎'));
+
+  // ensure select has a value
+  if(!personSelect.value) personSelect.selectedIndex = 0;
+  </script>
+</body>
+</html>
